@@ -19,17 +19,22 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
-// The directory intentionally contains only the six leadership/staff roles.
-const defaultDirectoryRoles = ["Owner", "Co-Owner", "Founder", "Senior Staff", "Staff", "Junior Staff"];
+// Fixed role IDs for the directory.
+const directoryRoleIds = new Set([
+  "1530712642384040027",
+  "1521187079336362024",
+  "1531109479264026706",
+  "1548732297669255259",
+  "1548732341185155103",
+  "1548732606508703744"
+]);
 const activity = new Map();
 const voiceSessions = new Map();
 const getActivity = (id) => {
   if (!activity.has(id)) activity.set(id, { messages: 0, mentionsReceived: 0, mentionsSent: 0, voiceMinutes: 0, voiceJoins: 0, chatRounds: 0 });
   return activity.get(id);
 };
-const directoryRoleNames = () => new Set(String(process.env.DIRECTORY_ROLE_NAMES || defaultDirectoryRoles.join(",")).split(",").map((x) => x.trim().toLowerCase()).filter(Boolean));
-const directoryRoleIds = () => new Set(String(process.env.DIRECTORY_ROLE_IDS || "").split(",").map((x) => x.trim()).filter(Boolean));
-const isDirectoryRole = (role) => directoryRoleIds().has(role.id) || directoryRoleNames().has(role.name.trim().toLowerCase());
+const isDirectoryRole = (role) => directoryRoleIds.has(role.id);
 const getGuild = () => client.guilds.fetch(guildId);
 
 function roleJson(role) {
