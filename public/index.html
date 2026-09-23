@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#110b18">
+  <meta name="description" content="MLD Discord Community Dashboard">
+  <title>MLD · مجتمع Discord</title>
+
+  <link rel="icon" href="/logo.svg">
+  <link rel="stylesheet" href="/style.css">
+</head>
+
+<body>
+  <div class="background-glow glow-right"></div>
+  <div class="background-glow glow-left"></div>
+
+  <header class="topbar">
+    <nav class="wrap nav">
+      <a class="brand" href="#top" aria-label="MLD">
+        <img src="/logo.svg" alt="شعار MLD">
+        <span>
+          <strong>MLD</strong>
+          <small>مجتمعك، مكانك الآمن</small>
+        </span>
+      </a>
+
+      <div class="nav-links">
+        <button type="button" data-view="members">
+          بحث الأعضاء
+        </button>
+
+        <button type="button" data-view="top">
+          TOP
+        </button>
+
+        <button type="button" data-view="roles">
+          الرتب
+        </button>
+
+        <a
+          id="invite"
+          class="invite"
+          href="#"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          انضم للسيرفر
+        </a>
+      </div>
+    </nav>
+  </header>
+
+  <main id="top" class="wrap">
+    <section class="hero">
+      <div class="hero-content">
+        <div class="pill">
+          <span class="pulse"></span>
+          MLD COMMUNITY SYSTEM
+        </div>
+
+        <h1>
+          مجتمع
+          <span>MLD</span>
+          <br>
+          بشكل مختلف.
+        </h1>
+
+        <p>
+          استكشف أعضاء المجتمع، الرتب، النشاط، الإحصائيات، والتفاعل
+          في تجربة سريعة وفخمة.
+        </p>
+
+        <div class="hero-actions">
+          <a class="primary" href="#directory">
+            ابدأ الاستكشاف
+            <span>←</span>
+          </a>
+
+          <div class="creator">
+            صُنع بواسطة
+            <strong>فهد المطيري</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-art">
+        <div class="hero-ring ring-one"></div>
+        <div class="hero-ring ring-two"></div>
+
+        <img
+          src="https://cdn.discordapp.com/attachments/1398447508463550578/1550544040401829888/IMG_0577.jpg?ex=6ab54faa&is=6ab3fe2a&hm=a259fd1df3cbee263e02c29b2d4e9cee75036f43cef9fe85ad23d79573c0c23f"
+          alt="MLD"
+          onerror="this.onerror=null;this.src='/logo.svg';"
+        >
+      </div>
+    </section>
+
+    <section class="server-strip" aria-label="معلومات السيرفر">
+      <div class="server-stat">
+        <small>السيرفر</small>
+        <strong id="server-name">MLD</strong>
+      </div>
+
+      <div class="server-stat">
+        <small>المنشئ</small>
+        <strong>فهد المطيري</strong>
+      </div>
+
+      <div class="server-stat">
+        <small>الأعضاء</small>
+        <strong id="server-count">—</strong>
+      </div>
+
+      <div class="server-stat">
+        <small>الحالة</small>
+        <strong class="online">
+          <span class="online-dot"></span>
+          متصل
+        </strong>
+      </div>
+    </section>
+
+    <section id="directory" class="panel">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">دليل المجتمع</p>
+
+          <h2 id="view-title">
+            ابحث عن عضو
+          </h2>
+
+          <p class="muted">
+            لن تظهر نتائج الأعضاء إلا بعد كتابة الاسم أو اليوزر.
+          </p>
+        </div>
+
+        <div id="search-wrap" class="search-wrap">
+          <span class="search-icon">⌕</span>
+
+          <input
+            id="search"
+            type="search"
+            autocomplete="off"
+            spellcheck="false"
+            placeholder="اسم العضو أو @username..."
+            aria-label="البحث عن عضو"
+          >
+        </div>
+      </div>
+
+      <div id="status" class="status">
+        اكتب اسم العضو أو اليوزر للبحث
+      </div>
+
+      <div id="content" class="grid empty">
+        <div class="empty-content">
+          <div class="empty-icon">⌕</div>
+          <h3>ابدأ بالبحث</h3>
+          <p>
+            اكتب اسم العضو أو اليوزر وستظهر النتائج هنا.
+          </p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div
+    id="modal"
+    class="modal hidden"
+    role="dialog"
+    aria-modal="true"
+    aria-label="تفاصيل"
+  >
+    <div class="modal-card">
+      <button
+        id="close"
+        class="close"
+        type="button"
+        aria-label="إغلاق"
+      >
+        ×
+      </button>
+
+      <div id="modal-content"></div>
+    </div>
+  </div>
+
+  <footer class="wrap footer">
+    <span>MLD</span>
+    <span>·</span>
+    <span id="year"></span>
+    <span>·</span>
+    <span>Community Intelligence</span>
+  </footer>
+
+  <script src="/site.js"></script>
+</body>
+</html>
