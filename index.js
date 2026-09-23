@@ -156,7 +156,7 @@ app.get("/api/public/leaderboard", async (req, res) => {
 
 app.listen(port, () => console.log(`Malaz API listening on port ${port}`));
 
-client.once("ready", () => {
+client.once("clientReady", () => {
   console.log(`Discord bot logged in as ${client.user.tag}`);
 });
 
