@@ -19,30 +19,35 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
-const defaultRoles = ["Owner", "Co-Owner", "Founder", "Senior Staff", "Staff", "Junior Staff", "PIC", "Emo", "Live"];
+// The directory intentionally contains only the six leadership/staff roles.
+const defaultDirectoryRoles = ["Owner", "Co-Owner", "Founder", "Senior Staff", "Staff", "Junior Staff"];
 const activity = new Map();
 const voiceSessions = new Map();
 const getActivity = (id) => {
   if (!activity.has(id)) activity.set(id, { messages: 0, mentionsReceived: 0, mentionsSent: 0, voiceMinutes: 0, voiceJoins: 0, chatRounds: 0 });
   return activity.get(id);
 };
-const roleNames = () => new Set(String(process.env.VISIBLE_ROLE_NAMES || defaultRoles.join(",")).split(",").map((x) => x.trim().toLowerCase()).filter(Boolean));
-const roleIds = () => new Set(String(process.env.VISIBLE_ROLE_IDS || "").split(",").map((x) => x.trim()).filter(Boolean));
-const isVisibleRole = (role) => roleIds().has(role.id) || roleNames().has(role.name.trim().toLowerCase());
+const directoryRoleNames = () => new Set(String(process.env.DIRECTORY_ROLE_NAMES || defaultDirectoryRoles.join(",")).split(",").map((x) => x.trim().toLowerCase()).filter(Boolean));
+const directoryRoleIds = () => new Set(String(process.env.DIRECTORY_ROLE_IDS || "").split(",").map((x) => x.trim()).filter(Boolean));
+const isDirectoryRole = (role) => directoryRoleIds().has(role.id) || directoryRoleNames().has(role.name.trim().toLowerCase());
 const getGuild = () => client.guilds.fetch(guildId);
 
 function roleJson(role) {
   return { id: role.id, name: role.name, color: role.hexColor, position: role.position, permissions: role.permissions.toArray(), membersCount: role.members?.size || 0, mentionable: role.mentionable };
 }
-function memberRoles(member) {
-  return member.roles.cache.filter((role) => role.id !== member.guild.id && isVisibleRole(role)).sort((a, b) => b.position - a.position).map(roleJson);
+function allMemberRoles(member) {
+  return member.roles.cache.filter((role) => role.id !== member.guild.id).sort((a, b) => b.position - a.position).map(roleJson);
+}
+function directoryRoles(member) {
+  return member.roles.cache.filter((role) => role.id !== member.guild.id && isDirectoryRole(role)).sort((a, b) => b.position - a.position).map(roleJson);
 }
 function memberJson(member) {
-  const roles = memberRoles(member);
-  return { id: member.id, name: member.displayName, username: member.user.username, globalName: member.user.globalName, avatar: member.user.displayAvatarURL({ extension: "png", size: 256 }), joinedAt: member.joinedAt, roles, rank: roles[0]?.name || "عضو", stats: getActivity(member.id) };
+  const roles = allMemberRoles(member);
+  const importantRoles = directoryRoles(member);
+  return { id: member.id, name: member.displayName, username: member.user.username, globalName: member.user.globalName, avatar: member.user.displayAvatarURL({ extension: "png", size: 256 }), joinedAt: member.joinedAt, roles, importantRoles, rank: importantRoles[0]?.name || roles[0]?.name || "عضو", stats: getActivity(member.id) };
 }
 async function allMembers(guild) { await guild.members.fetch(); return [...guild.members.cache.values()].filter((member) => !member.user.bot); }
-function sortedMembers(members) { return members.sort((a, b) => (memberRoles(b)[0]?.position || 0) - (memberRoles(a)[0]?.position || 0)).map(memberJson); }
+function sortedMembers(members) { return members.sort((a, b) => (directoryRoles(b)[0]?.position || 0) - (directoryRoles(a)[0]?.position || 0)).map(memberJson); }
 
 app.get("/health", (req, res) => res.json({ ok: true, botReady: client.isReady() }));
 app.get("/api/public/server", async (req, res) => {
@@ -50,11 +55,11 @@ app.get("/api/public/server", async (req, res) => {
   catch (error) { console.error(error); res.status(503).json({ error: "Discord server is unavailable" }); }
 });
 app.get("/api/public/roles", async (req, res) => {
-  try { const guild = await getGuild(); res.json({ roles: guild.roles.cache.filter((role) => role.id !== guild.id && isVisibleRole(role)).sort((a, b) => b.position - a.position).map(roleJson) }); }
+  try { const guild = await getGuild(); res.json({ roles: guild.roles.cache.filter((role) => role.id !== guild.id && isDirectoryRole(role)).sort((a, b) => b.position - a.position).map(roleJson) }); }
   catch (error) { console.error(error); res.status(503).json({ error: "Roles are unavailable" }); }
 });
 app.get("/api/public/roles/:id/members", async (req, res) => {
-  try { const guild = await getGuild(); const role = guild.roles.cache.get(req.params.id); if (!role) return res.status(404).json({ error: "Role not found" }); res.json({ role: roleJson(role), members: sortedMembers((await allMembers(guild)).filter((member) => member.roles.cache.has(role.id))) }); }
+  try { const guild = await getGuild(); const role = guild.roles.cache.get(req.params.id); if (!role || !isDirectoryRole(role)) return res.status(404).json({ error: "Role not found" }); res.json({ role: roleJson(role), members: sortedMembers((await allMembers(guild)).filter((member) => member.roles.cache.has(role.id))) }); }
   catch (error) { console.error(error); res.status(503).json({ error: "Role members are unavailable" }); }
 });
 app.get("/api/public/members", async (req, res) => {
@@ -67,18 +72,9 @@ app.get("/api/public/member/:id", async (req, res) => {
 });
 app.get("/api/public/leaderboard", async (req, res) => { try { res.json({ members: sortedMembers(await allMembers(await getGuild())) }); } catch (error) { res.status(503).json({ error: "Leaderboard unavailable" }); } });
 
-client.on("messageCreate", (message) => {
-  if (message.author.bot) return;
-  const sender = getActivity(message.author.id); sender.messages += 1; sender.chatRounds += 1;
-  for (const id of message.mentions.users.keys()) { getActivity(id).mentionsReceived += 1; sender.mentionsSent += 1; }
-});
-client.on("voiceStateUpdate", (oldState, newState) => {
-  const id = newState.id;
-  if (!oldState.channelId && newState.channelId) { voiceSessions.set(id, Date.now()); getActivity(id).voiceJoins += 1; }
-  if (oldState.channelId && !newState.channelId && voiceSessions.has(id)) { getActivity(id).voiceMinutes += Math.round((Date.now() - voiceSessions.get(id)) / 60000); voiceSessions.delete(id); }
-});
-
+client.on("messageCreate", (message) => { if (message.author.bot) return; const sender = getActivity(message.author.id); sender.messages += 1; sender.chatRounds += 1; for (const id of message.mentions.users.keys()) { getActivity(id).mentionsReceived += 1; sender.mentionsSent += 1; } });
+client.on("voiceStateUpdate", (oldState, newState) => { const id = newState.id; if (!oldState.channelId && newState.channelId) { voiceSessions.set(id, Date.now()); getActivity(id).voiceJoins += 1; } if (oldState.channelId && !newState.channelId && voiceSessions.has(id)) { getActivity(id).voiceMinutes += Math.round((Date.now() - voiceSessions.get(id)) / 60000); voiceSessions.delete(id); } });
 app.get("*", (req, res) => res.sendFile(path.join(__dirname, "public", "index.html")));
-app.listen(port, () => console.log(`MLD website/API listening on port ${port}`));
+app.listen(port, () => console.log(`MLD website/API listening on ${port}`));
 client.once("ready", () => console.log(`Discord bot logged in as ${client.user.tag}`));
 client.login(token).catch((error) => { console.error("Discord login failed:", error.message); process.exit(1); });
